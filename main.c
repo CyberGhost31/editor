@@ -15,18 +15,6 @@ struct ln_t
 
 typedef struct ln_t line;
 
-enum tk_type_t
-{
-    keyword,
-    number,
-    chararcter,
-    string,
-    preproc_dir,
-    operators,
-    type
-
-};
-
 struct ed_st_t
 {
     char *filename;
