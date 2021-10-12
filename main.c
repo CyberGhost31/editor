@@ -27,18 +27,18 @@ enum tk_type_t
 
 };
 
-typedef enum tk_type_t token_type;
-
-struct tk_t
+struct ed_st_t
 {
-    char *str;
-    token_type type;
-    struct token *next;
+    char *filename;
+    int virt_y, virt_x;
+    int real_y, real_x, saved_real_x;
+    int offset_x, saved_offset_x;
+    line *root, *top, *current;
 };
 
-typedef struct tk_t token;
+typedef struct ed_st_t editor_state;
 
-line *init(char *string, unsigned size, unsigned length)
+line *initln(char *string, unsigned size, unsigned length)
 {
     line *root;
     root = (line *)malloc(sizeof(line));
@@ -113,7 +113,7 @@ line *readfile(char fname[])
     {
         temp = (char *)malloc(256 * sizeof(char));
         temp[0] = 0;
-        root = init(temp, 256, 0);
+        root = initln(temp, 256, 0);
     }
     else
     {
@@ -123,7 +123,7 @@ line *readfile(char fname[])
         if (pos)
         {
             temp = myfgets(file, &size, &length);
-            root = init(temp, size, length);
+            root = initln(temp, size, length);
             current = root;
             while (NULL != (temp = myfgets(file, &size, &length)))
                 current = addln(current, temp, size, length);
@@ -132,7 +132,7 @@ line *readfile(char fname[])
         {
             temp = (char *)malloc(256 * sizeof(char));
             temp[0] = 0;
-            root = init(temp, 256, 0);
+            root = initln(temp, 256, 0);
         }
         fclose(file);
     }
@@ -153,7 +153,7 @@ void clrmem(line *root)
     } while (current != NULL);
 }
 
-void print(line *a, int offset)
+void print(WINDOW *win, line *a, int offset)
 {
     int c = 1;
     for (int i = 0; i < a->length; i++)
@@ -164,7 +164,7 @@ void print(line *a, int offset)
                 offset--;
             else
             {
-                printw("%c", a->str[i]);
+                waddch(win, (unsigned) a->str[i]);
                 c++;
             }
         }
@@ -176,7 +176,7 @@ void print(line *a, int offset)
             {
                 for (int j = 0; j < 4 - offset; j++)
                 {    
-                    printw(" ");
+                    waddch(win, (unsigned) ' ');
                     c++;
                 }
             }
@@ -186,157 +186,157 @@ void print(line *a, int offset)
     }
 }
 
-void render_text(WINDOW *win, line *top_line, int offsety, int offsetx)
+void render_text(WINDOW *win, editor_state ed)
 {
     curs_set(0);
-    box(win, 0, 0);
     for (int i = 1; i < LINES - 2; i++)
     {
-        move(i, 1);
-        if (top_line != NULL)
+        wmove(win, i, 1);
+        if (ed.top != NULL)
         {
-            print(top_line, offsetx);
-            // printw("%s", top_line->str);
-            top_line = top_line->next;
+            print(win, ed.top, ed.offset_x);
+            waddch(win, '\n');
+            ed.top= ed.top->next;
         }
         else
             break;
     }
+    box(win, 0, 0);
     wrefresh(win);
 }
 
-void get_virt_x(line *current, int real_x, int *offset, int *virt_x)
+void get_virt_x(editor_state *ed)
 {
     int tabs = 0;
     int num_of_chars;
-    for (int i = 0; i < real_x - 1; i++)
-        if (current->str[i] == 9) tabs++;
-    num_of_chars =  real_x - tabs + tabs * 4;
-    if (num_of_chars < *offset)
+    for (int i = 0; i < ed->real_x - 1; i++)
+        if (ed->current->str[i] == 9) tabs++;
+    num_of_chars =  ed->real_x - tabs + tabs * 4;
+    if (ed->saved_offset_x > ed->offset_x)
+        ed->offset_x = ed->saved_offset_x;
+    if (num_of_chars - ed->offset_x < 1 || num_of_chars - ed->offset_x > COLS - 2)
     {
 
-        *virt_x = num_of_chars % (COLS - 1);
-        *offset = num_of_chars = num_of_chars - *virt_x;
+        ed->virt_x = num_of_chars % (COLS - 1);
+        ed->offset_x = num_of_chars - ed->virt_x;
     }
     else
-        *virt_x = num_of_chars - *offset;
+        ed->virt_x = num_of_chars - ed->offset_x;
 }
 
-void render_interface(int real_y, int real_x, int virt_y, int virt_x, int offset)
+void render_interface(editor_state ed)
 {
     curs_set(0);
     move(LINES - 1, 1);
     insertln();
     attron(A_REVERSE);
-    printw("real: %d/%d; virt: %d/%d; offset = %d; LINES = %d; COLS = %d", real_y, real_x, virt_y, virt_x, offset, LINES, COLS);
+    printw("real: %d/%d; virt: %d/%d; offset = %d; LINES = %d; COLS = %d", ed.real_y, ed.real_x, ed.virt_y, ed.virt_x, ed.offset_x, LINES, COLS);
     attroff(A_REVERSE);
     refresh();
 }
 
+void init_editor(editor_state *a, char *fname)
+{
+    a->filename = fname;
+    a->root = readfile(fname);
+    a->current = a->top = a->root;
+    a->current = a->root;
+    a->virt_y = a->real_y = 1;
+    a->virt_x = a->real_x = a->saved_real_x = 1;
+    a->offset_x = a->saved_offset_x = 0;
+}
+
+void process_key(int key, editor_state *ed)
+{
+        if ((key == KEY_UP) && (ed->current->prev != NULL))
+        {
+            ed->real_y--;
+            ed->current = ed->current->prev;
+
+            if (ed->current->length < ed->saved_real_x)
+                ed->real_x = ed->current->length + 1;
+            else
+                ed->real_x = ed->saved_real_x;
+            get_virt_x(ed);
+            if (1 < ed->virt_y)
+                ed->virt_y--;
+            else
+                ed->top = ed->top->prev;
+        }
+        else if ((key == KEY_DOWN) && (ed->current->next != NULL))
+        {
+            ed->real_y++;
+            ed->current = ed->current->next;
+            if (ed->current->length < ed->saved_real_x)
+                ed->real_x = ed->current->length + 1;
+            else
+                ed->real_x = ed->saved_real_x;
+            get_virt_x(ed);
+            if (ed->virt_y < LINES - 3)
+                ed->virt_y++;
+            else
+                ed->top = ed->top->next;
+        }
+        else if ((key == KEY_LEFT) && (1 < ed->real_x))
+        {
+            ed->real_x--;
+            ed->saved_real_x = ed->real_x;
+            if (ed->virt_x == 1)
+            {
+                ed->offset_x--;
+                ed->saved_offset_x = ed->offset_x;
+            }
+            get_virt_x(ed);
+        }
+        else if ((key == KEY_RIGHT) && (ed->real_x <= ed->current->length))
+        {
+            ed->real_x++;
+            ed->saved_real_x = ed->real_x;
+            if (ed->virt_x == COLS - 2)
+            {
+                ed->offset_x++;
+                ed->saved_offset_x = ed->offset_x;
+            }
+            get_virt_x(ed);
+
+        }
+}
+
 void editor(char *fname)
 {
-    line *root, *top, *current;
-    root = readfile(fname);
-    top = root;
-    current = root;
+    editor_state ed;
+    init_editor(&ed, fname);
+
     if (!initscr())
     {
-        printf("Ошибка инициализации ncurses.\n");
+        printf("Ncurses initialization error.\n");
         exit(1);
     }
-    noecho();
-    int key = 0;
-    int virt_y = 1, virt_x = 1, real_y = 1, real_x = 1, saved_real_x = 1;
-    int maxx = COLS;
-    int maxy = LINES;
-    keypad(stdscr, TRUE);
-    int width = COLS;
-    int height = LINES;
-    int offsety = 0, offsetx = 0, saved_offsetx = 0;
-    int tabs;
     WINDOW *win = newwin(LINES - 1, COLS, 0, 0);
-    while (1)
+    noecho();
+    keypad(stdscr, TRUE);
+    // echo("\033[\066 q");
+    int curr_cols = COLS, curr_lines = LINES;
+    int key = 0;
+    int rerender_flag = 1;
+    while (key != 27)
     {
-        render_interface(real_y, real_x, virt_y, virt_x, offsetx);
-        render_text(win, top, offsety, offsetx);
-        move(virt_y, virt_x);
-        curs_set(1);
+        render_interface(ed);
+        /*if (COLS != curr_cols || LINES != curr_lines)
+        {
+            wclear(win);
+            curr_cols = COLS;
+            curr_lines = LINES;
+        }*/
+        if (rerender_flag)
+            render_text(win, ed);
+        move(ed.virt_y, ed.virt_x);
+        curs_set(2);
         key = getch();
-        if ((key == KEY_UP) && ((top->prev != NULL) || (current->prev != NULL)))
-        {
-            if ((top->prev != NULL) || (current->prev != NULL))
-            {
-                real_y--;
-                current = current->prev;
-
-                if (current->length < saved_real_x)
-                    real_x = current->length + 1;
-                else
-                    real_x = saved_real_x;
-                if (offsetx == 0)
-                    offsetx = saved_offsetx;
-                get_virt_x(current, real_x, &offsetx, &virt_x);
-                if (1 < virt_y)
-                    move(--virt_y, virt_x);
-                else
-                    top = top->prev;
-            }
-        }
-        else if ((key == KEY_DOWN) && (current->next != NULL))
-        {
-            if (current->next != NULL)
-            {
-                real_y++;
-                current = current->next;
-                if (current->length < saved_real_x)
-                    real_x = current->length + 1;
-                else
-                    real_x = saved_real_x;
-                if (offsetx == 0)
-                    offsetx = saved_offsetx;
-                get_virt_x(current, real_x, &offsetx, &virt_x);
-                if (virt_y < maxy - 3)
-                    move(++virt_y, virt_x);
-                else
-                    top = top->next;
-            }
-        }
-        else if ((key == KEY_LEFT) && (1 < real_x))
-        {
-            if (1 < real_x)
-            {
-                real_x--;
-                saved_real_x = real_x;
-                if (virt_x == 1)
-                {
-                    offsetx--;
-                    saved_offsetx = offsetx;
-                }
-                get_virt_x(current, real_x, &offsetx, &virt_x);
-                move(virt_y, virt_x);
-            }
-        }
-        else if ((key == KEY_RIGHT) && (real_x <= current->length))
-        {
-            if (real_x <= current->length)
-            {
-                real_x++;
-                saved_real_x = real_x;
-                if (virt_x == COLS - 1)
-                {
-                    offsetx++;
-                    saved_offsetx = offsetx;
-                }
-                get_virt_x(current, real_x, &offsetx, &virt_x);
-                move(virt_y, virt_x);
-            }
-        }
-        else if (key == 27)
-            break;
+        process_key(key, &ed);
     }
     endwin();
-
-    clrmem(root);
+    clrmem(ed.root);
 }
 
 int main(int argc, char *argv[])
