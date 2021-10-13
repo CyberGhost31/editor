@@ -228,7 +228,7 @@ void render_interface(editor_state ed)
     move(LINES - 1, 1);
     insertln();
     attron(A_REVERSE);
-    printw("real: %d/%d; virt: %d/%d; next = \"%d\"", ed.real_y, ed.real_x, ed.virt_y, ed.virt_x, ed.current->next == NULL);
+    printw("real: %d/%d; virt: %d/%d; term = %d/%d", ed.real_y, ed.real_x, ed.virt_y, ed.virt_x, COLS, LINES);
     attroff(A_REVERSE);
     refresh();
 }
@@ -327,11 +327,24 @@ void editor(char *fname)
         render_interface(ed);
         if (COLS != curr_cols || LINES != curr_lines)
         {
+            if (LINES != curr_lines)
+            {
+                delwin(win);
+                win = newwin(LINES - 1, COLS, 0, 0);
+                
+                if (ed.virt_y > LINES - 3)
+                {
+                    while (ed.virt_y > LINES - 3)
+                    {
+                        ed.virt_y--;
+                        ed.top = ed.top->next;
+                    }
+                }
+            }
             curr_cols = COLS;
             curr_lines = LINES;
-            delwin(win);
-            win = newwin(LINES - 1, COLS, 0, 0);
             ed.rerender_flag = 1;
+            
         }
         if (ed.rerender_flag)
             render_text(win, ed);
