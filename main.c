@@ -67,7 +67,7 @@ line *delln(line *ln)
     return (prev);
 }
 
-char *myfgets(FILE *file, unsigned *size, unsigned *length)
+char *myfgets(FILE *file, unsigned *size, unsigned *length, int *eof_flag)
 {
     int k = 1, i = 0;
     char *str;
@@ -84,9 +84,8 @@ char *myfgets(FILE *file, unsigned *size, unsigned *length)
     *size = 256 * k;
 
     if (feof(file))
-        return NULL;
-    else
-        return str;
+        *eof_flag = 1;
+    return str;
 }
 
 line *readfile(char fname[])
@@ -97,6 +96,7 @@ line *readfile(char fname[])
     long pos;
     char *temp;
     unsigned size, length;
+    int eof_flag = 0;
     if (file == NULL)
     {
         temp = (char *)malloc(256 * sizeof(char));
@@ -110,11 +110,14 @@ line *readfile(char fname[])
         rewind(file);
         if (pos)
         {
-            temp = myfgets(file, &size, &length);
+            temp = myfgets(file, &size, &length, &eof_flag);
             root = initln(temp, size, length);
             current = root;
-            while (NULL != (temp = myfgets(file, &size, &length)))
+            while (eof_flag != 1)
+            {
+                temp = myfgets(file, &size, &length, &eof_flag);
                 current = addln(current, temp, size, length);
+            }
         }
         else
         {
@@ -225,7 +228,7 @@ void render_interface(editor_state ed)
     move(LINES - 1, 1);
     insertln();
     attron(A_REVERSE);
-    printw("real: %d/%d; virt: %d/%d; offset = %d; rerender = %d", ed.real_y, ed.real_x, ed.virt_y, ed.virt_x, ed.offset_x, ed.rerender_flag);
+    printw("real: %d/%d; virt: %d/%d; next = \"%d\"", ed.real_y, ed.real_x, ed.virt_y, ed.virt_x, ed.current->next == NULL);
     attroff(A_REVERSE);
     refresh();
 }
@@ -261,7 +264,7 @@ void process_key(int key, editor_state *ed)
                 ed->rerender_flag = 1;
             }
         }
-        else if ((key == KEY_DOWN) && (ed->current->next->next != NULL))
+        else if ((key == KEY_DOWN) && (ed->current->next != NULL))
         {
             ed->real_y++;
             ed->current = ed->current->next;
@@ -323,7 +326,12 @@ void editor(char *fname)
     {
         render_interface(ed);
         if (COLS != curr_cols || LINES != curr_lines)
+        {
+            curr_cols = COLS;
+            curr_lines = LINES;
+            wclear(win);
             ed.rerender_flag = 1;
+        }
         if (ed.rerender_flag)
             render_text(win, ed);
         ed.rerender_flag = 0;
