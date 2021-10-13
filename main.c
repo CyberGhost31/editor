@@ -1,6 +1,5 @@
 #include <locale.h>
 #include <stdio.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <ncurses.h>
 
@@ -22,6 +21,7 @@ struct ed_st_t
     int real_y, real_x, saved_real_x;
     int offset_x, saved_offset_x;
     line *root, *top, *current;
+    int rerender_flag;
 };
 
 typedef struct ed_st_t editor_state;
@@ -202,11 +202,18 @@ void get_virt_x(editor_state *ed)
     num_of_chars =  ed->real_x - tabs + tabs * 4;
     if (ed->saved_offset_x > ed->offset_x)
         ed->offset_x = ed->saved_offset_x;
-    if (num_of_chars - ed->offset_x < 1 || num_of_chars - ed->offset_x > COLS - 2)
+    if (num_of_chars - ed->offset_x < 1)
     {
 
         ed->virt_x = num_of_chars % (COLS - 1);
         ed->offset_x = num_of_chars - ed->virt_x;
+        ed->rerender_flag = 1;
+    }
+    else if (num_of_chars - ed->offset_x > COLS - 2)
+    {
+        ed->virt_x = COLS - 2;
+        ed->offset_x = num_of_chars - ed->virt_x;
+        ed->rerender_flag = 1;
     }
     else
         ed->virt_x = num_of_chars - ed->offset_x;
@@ -218,7 +225,7 @@ void render_interface(editor_state ed)
     move(LINES - 1, 1);
     insertln();
     attron(A_REVERSE);
-    printw("real: %d/%d; virt: %d/%d; offset = %d; LINES = %d; COLS = %d", ed.real_y, ed.real_x, ed.virt_y, ed.virt_x, ed.offset_x, LINES, COLS);
+    printw("real: %d/%d; virt: %d/%d; offset = %d; rerender = %d", ed.real_y, ed.real_x, ed.virt_y, ed.virt_x, ed.offset_x, ed.rerender_flag);
     attroff(A_REVERSE);
     refresh();
 }
@@ -232,6 +239,7 @@ void init_editor(editor_state *a, char *fname)
     a->virt_y = a->real_y = 1;
     a->virt_x = a->real_x = a->saved_real_x = 1;
     a->offset_x = a->saved_offset_x = 0;
+    a->rerender_flag = 1;
 }
 
 void process_key(int key, editor_state *ed)
@@ -245,13 +253,15 @@ void process_key(int key, editor_state *ed)
                 ed->real_x = ed->current->length + 1;
             else
                 ed->real_x = ed->saved_real_x;
-            get_virt_x(ed);
             if (1 < ed->virt_y)
                 ed->virt_y--;
             else
+            {
                 ed->top = ed->top->prev;
+                ed->rerender_flag = 1;
+            }
         }
-        else if ((key == KEY_DOWN) && (ed->current->next != NULL))
+        else if ((key == KEY_DOWN) && (ed->current->next->next != NULL))
         {
             ed->real_y++;
             ed->current = ed->current->next;
@@ -259,11 +269,13 @@ void process_key(int key, editor_state *ed)
                 ed->real_x = ed->current->length + 1;
             else
                 ed->real_x = ed->saved_real_x;
-            get_virt_x(ed);
             if (ed->virt_y < LINES - 3)
                 ed->virt_y++;
             else
+            {
                 ed->top = ed->top->next;
+                ed->rerender_flag = 1;
+            }
         }
         else if ((key == KEY_LEFT) && (1 < ed->real_x))
         {
@@ -273,8 +285,8 @@ void process_key(int key, editor_state *ed)
             {
                 ed->offset_x--;
                 ed->saved_offset_x = ed->offset_x;
+                ed->rerender_flag = 1;
             }
-            get_virt_x(ed);
         }
         else if ((key == KEY_RIGHT) && (ed->real_x <= ed->current->length))
         {
@@ -284,10 +296,11 @@ void process_key(int key, editor_state *ed)
             {
                 ed->offset_x++;
                 ed->saved_offset_x = ed->offset_x;
+                ed->rerender_flag = 1;
             }
-            get_virt_x(ed);
 
         }
+        get_virt_x(ed);
 }
 
 void editor(char *fname)
@@ -303,23 +316,19 @@ void editor(char *fname)
     WINDOW *win = newwin(LINES - 1, COLS, 0, 0);
     noecho();
     keypad(stdscr, TRUE);
-    // echo("\033[\066 q");
     int curr_cols = COLS, curr_lines = LINES;
     int key = 0;
     int rerender_flag = 1;
     while (key != 27)
     {
         render_interface(ed);
-        /*if (COLS != curr_cols || LINES != curr_lines)
-        {
-            wclear(win);
-            curr_cols = COLS;
-            curr_lines = LINES;
-        }*/
-        if (rerender_flag)
+        if (COLS != curr_cols || LINES != curr_lines)
+            ed.rerender_flag = 1;
+        if (ed.rerender_flag)
             render_text(win, ed);
+        ed.rerender_flag = 0;
         move(ed.virt_y, ed.virt_x);
-        curs_set(2);
+        curs_set(1);
         key = getch();
         process_key(key, &ed);
     }
