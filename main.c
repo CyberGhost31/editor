@@ -329,7 +329,8 @@ void editor(char *fname)
         {
             curr_cols = COLS;
             curr_lines = LINES;
-            wclear(win);
+            delwin(win);
+            win = newwin(LINES - 1, COLS, 0, 0);
             ed.rerender_flag = 1;
         }
         if (ed.rerender_flag)
