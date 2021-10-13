@@ -5,7 +5,7 @@
 
 struct ln_t
 {
-    char *str;
+    unsigned *str;
     unsigned size;
     unsigned length;
     struct ln_t *next;
@@ -26,7 +26,7 @@ struct ed_st_t
 
 typedef struct ed_st_t editor_state;
 
-line *initln(char *string, unsigned size, unsigned length)
+line *initln(unsigned *string, unsigned size, unsigned length)
 {
     line *root;
     root = (line *)malloc(sizeof(line));
@@ -35,10 +35,10 @@ line *initln(char *string, unsigned size, unsigned length)
     root->length = length;
     root->next = NULL;
     root->prev = NULL;
-    return (root);
+    return root;
 }
 
-line *addln(line *ln, char *string, unsigned size, unsigned length)
+line *addln(line *ln, unsigned *string, unsigned size, unsigned length)
 {
     line *temp, *p;
     temp = (line *)malloc(sizeof(line));
@@ -67,22 +67,48 @@ line *delln(line *ln)
     return (prev);
 }
 
-char *myfgets(FILE *file, unsigned *size, unsigned *length, int *eof_flag)
+unsigned *myfgets(FILE *file, unsigned *size, unsigned *length, int *eof_flag)
 {
     int k = 1, i = 0;
-    char *str;
-    str = (char *)malloc(256 * sizeof(char));
-    int c;
-    while ((c = fgetc(file)) != EOF && c != '\n')
+    unsigned *str;
+    str = (unsigned *)malloc(256 * sizeof(unsigned));
+    unsigned char b1, b2, b3, b4;
+    unsigned code;
+    while ((b1 = fgetc(file)) != EOF && b1 != '\n')
     {
+        code = 0;
+        if(b1 <= 0x7F)
+        {
+            code = b1;
+        }
+        else if(b1 >= 0xF8)
+            break;
+        else if(b1 >= 0xF0)
+        {
+            b2 = fgetc(file);
+            b3 = fgetc(file);
+            b4 = fgetc(file);
+            code = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+        }
+        else if(b1 >= 0xE0)
+        {
+            b2 = fgetc(file);
+            b3 = fgetc(file);
+            code = (b1 << 16) | (b2 << 8) | b3;
+        }
+        else if(b1 >= 0xC0)
+        {
+            b2 = fgetc(file);
+            code = (b1 << 8) | b2;
+        }
+
         if (i == 256 * k - 1)
             str = realloc(str, 256 * (++k));
-        str[i++] = c;
+        str[i++] = code;
     }
     str[i] = 0;
     *length = i;
     *size = 256 * k;
-
     if (feof(file))
         *eof_flag = 1;
     return str;
@@ -94,12 +120,12 @@ line *readfile(char fname[])
     file = fopen(fname, "r");
     line *root, *current;
     long pos;
-    char *temp;
+    unsigned *temp;
     unsigned size, length;
     int eof_flag = 0;
     if (file == NULL)
     {
-        temp = (char *)malloc(256 * sizeof(char));
+        temp = (unsigned *)malloc(256 * sizeof(unsigned));
         temp[0] = 0;
         root = initln(temp, 256, 0);
     }
@@ -121,7 +147,7 @@ line *readfile(char fname[])
         }
         else
         {
-            temp = (char *)malloc(256 * sizeof(char));
+            temp = (unsigned *)malloc(256 * sizeof(unsigned));
             temp[0] = 0;
             root = initln(temp, 256, 0);
         }
@@ -147,6 +173,7 @@ void clrmem(line *root)
 void print(WINDOW *win, line *a, int offset)
 {
     int c = 1;
+    unsigned b[4];
     for (int i = 0; i < a->length; i++)
     {
         if(a->str[i] != '\t')
@@ -155,7 +182,15 @@ void print(WINDOW *win, line *a, int offset)
                 offset--;
             else
             {
-                waddch(win, (unsigned) a->str[i]);
+                b[0] = a->str[i] >> 24;
+                b[1] = (a->str[i] >> 16) & 0xFF;
+                b[2] = (a->str[i] >> 8) & 0xFF;
+                b[3] = a->str[i] & 0xFF;
+                for (int j = 0; j < 4; j++)
+                {
+                    if (b[j])
+                        waddch(win, (unsigned) b[j]);
+                }
                 c++;
             }
         }
@@ -186,11 +221,12 @@ void render_text(WINDOW *win, editor_state ed)
         if (ed.top != NULL)
         {
             print(win, ed.top, ed.offset_x);
-            waddch(win, '\n');
-            ed.top= ed.top->next;
+            ed.top = ed.top->next;
         }
         else
-            break;
+            waddch(win, '~');
+        waddch(win, '\n');
+        
     }
     box(win, 0, 0);
     wrefresh(win);
@@ -228,7 +264,7 @@ void render_interface(editor_state ed)
     move(LINES - 1, 1);
     insertln();
     attron(A_REVERSE);
-    printw("real: %d/%d; virt: %d/%d; term = %d/%d", ed.real_y, ed.real_x, ed.virt_y, ed.virt_x, COLS, LINES);
+    printw("real: %d/%d", ed.real_y, ed.real_x);
     attroff(A_REVERSE);
     refresh();
 }
