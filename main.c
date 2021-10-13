@@ -74,7 +74,7 @@ unsigned *myfgets(FILE *file, unsigned *size, unsigned *length, int *eof_flag)
     str = (unsigned *)malloc(256 * sizeof(unsigned));
     unsigned char b1, b2, b3, b4;
     unsigned code;
-    while ((b1 = fgetc(file)) != EOF && b1 != '\n')
+    while ((int)(b1 = fgetc(file)) != EOF && b1 != '\n')
     {
         code = 0;
         if(b1 <= 0x7F)
