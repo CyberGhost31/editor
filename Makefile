@@ -1,3 +1,3 @@
 all:
-	$(shell if ! [ -d build ]; then mkdir build; fi;)
+	$(shell mkdir -p build)
 	gcc main.c -lncursesw -o build/editor
