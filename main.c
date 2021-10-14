@@ -283,7 +283,9 @@ void init_editor(editor_state *a, char *fname)
 
 void process_key(int key, editor_state *ed)
 {
-        if ((key == KEY_UP) && (ed->current->prev != NULL))
+        if (key == 27)
+            return;
+        else if ((key == KEY_UP) && (ed->current->prev != NULL))
         {
             ed->real_y--;
             ed->current = ed->current->prev;
@@ -352,21 +354,23 @@ void editor(char *fname)
         printf("Ncurses initialization error.\n");
         exit(1);
     }
+
     WINDOW *win = newwin(LINES - 1, COLS, 0, 0);
     noecho();
     keypad(stdscr, TRUE);
-    int curr_cols = COLS, curr_lines = LINES;
+    // nodelay(stdscr, TRUE);
+    set_escdelay(0);
+    int curr_lines = LINES;
     int key = 0;
     int rerender_flag = 1;
     while (key != 27)
     {
         render_interface(ed);
-        if (COLS != curr_cols || LINES != curr_lines)
+        if (key == 410)
         {
             if (LINES != curr_lines)
             {
-                delwin(win);
-                win = newwin(LINES - 1, COLS, 0, 0);
+                wresize(win, LINES - 1, COLS);
                 
                 if (ed.virt_y > LINES - 3)
                 {
@@ -376,9 +380,8 @@ void editor(char *fname)
                         ed.top = ed.top->next;
                     }
                 }
+                curr_lines = LINES;
             }
-            curr_cols = COLS;
-            curr_lines = LINES;
             ed.rerender_flag = 1;
             
         }
@@ -390,6 +393,7 @@ void editor(char *fname)
         key = getch();
         process_key(key, &ed);
     }
+    delwin(win);
     endwin();
     clrmem(ed.root);
 }
