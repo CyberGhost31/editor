@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ncurses.h>
+#include <curses.h>
 
 struct ln_t
 {
@@ -258,13 +259,13 @@ void get_virt_x(editor_state *ed)
         ed->virt_x = num_of_chars - ed->offset_x;
 }
 
-void render_interface(editor_state ed)
+void render_interface(editor_state ed, int key)
 {
     curs_set(0);
     move(LINES - 1, 1);
     insertln();
     attron(A_REVERSE);
-    printw("real: %d/%d", ed.real_y, ed.real_x);
+    printw("real: %d/%d; (%d) = \'%c\'", ed.real_y, ed.real_x, key, key);
     attroff(A_REVERSE);
     refresh();
 }
@@ -281,11 +282,80 @@ void init_editor(editor_state *a, char *fname)
     a->rerender_flag = 1;
 }
 
+void insertChr(editor_state *ed, unsigned chr)
+{
+    unsigned temp1, temp2;
+    if (ed->current->length - 2 == ed->current->size)
+    {
+        ed->current->size += 256;
+        realloc(ed->current->str, ed->current->size);
+    }
+    temp1 = chr;
+    for (unsigned i = ed->real_x - 1; i <= ed->current->length; i++)
+    {
+        temp2 = ed->current->str[i];
+        ed->current->str[i] = temp1;
+        temp1 = temp2;
+    }
+    ed->current->length++;
+}
+
+void delChr(editor_state *ed, unsigned chr)
+{
+    if (ed->real_x <= ed->current->length)
+    {
+        for (unsigned i = ed->real_x - 1; i <= ed->current->length; i++)
+            ed->current->str[i] = ed->current->str[i + 1];
+        ed->current->length--;
+    }
+}
+
+void save(editor_state *ed)
+{
+    FILE *file;
+    file = fopen(ed->filename, "w");
+    line *current;
+    current = ed->root;
+    do
+    {
+        for (int i = 0; i < current->length; i++)
+        {
+            if (current->str[i] >= 0x0 && current->str[i] <= 0xFF)
+            {
+                fputc((char) current->str[i], file);
+            }
+            else if (current->str[i] >= 0x100 && current->str[i] <= 0xFFFF)
+            {
+                fputc((current->str[i] & 0xFF00) >> 8, file);
+                fputc(current->str[i] & 0xFF, file);
+            }
+            else if (current->str[i] >= 0x10000 && current->str[i] <= 0xFFFFFF)
+            {
+                fputc((current->str[i] & 0xFF0000) >> 16, file);
+                fputc((current->str[i] & 0xFF00) >> 8, file);
+                fputc(current->str[i] & 0xFF, file);
+            }
+            else if (current->str[i] >= 0x1000000 && current->str[i] <= 0xFFFFFFFF)
+            {
+                fputc((current->str[i] & 0xFF000000) >> 24, file);
+                fputc((current->str[i] & 0xFF0000) >> 16, file);
+                fputc((current->str[i] & 0xFF00) >> 8, file);
+                fputc(current->str[i] & 0xFF, file);
+            }
+        }
+        if ((current = current->next) != NULL)
+            fputc('\n', file);
+
+    } while (current != NULL);
+    fclose(file);
+
+}
+
 void process_key(int key, editor_state *ed)
 {
         if (key == 27)
-            return;
-        else if ((key == KEY_UP) && (ed->current->prev != NULL))
+            save(ed);
+        if ((key == KEY_UP) && (ed->current->prev != NULL))
         {
             ed->real_y--;
             ed->current = ed->current->prev;
@@ -341,8 +411,69 @@ void process_key(int key, editor_state *ed)
             }
 
         }
+        else if ((key == '\t' || key == KEY_BACKSPACE || key == 127) && (1 < ed->real_x))
+        {
+            ed->real_x--;
+            ed->saved_real_x = ed->real_x;
+            if (ed->virt_x == 1)
+            {
+                ed->offset_x--;
+                ed->saved_offset_x = ed->offset_x;
+            }
+            delChr(ed, key);
+            ed->rerender_flag = 1;
+
+        }
+        else if (key == KEY_DC)
+        {
+            delChr(ed, key);
+            ed->rerender_flag = 1;
+        }
+        else if ((key >= ' ') && !(key == KEY_DC || key == KEY_BACKSPACE || key == '\t' || key == 127 || key == KEY_UP || key == KEY_DOWN || key == KEY_LEFT || key == KEY_RIGHT))
+        {
+            insertChr(ed, key);
+            ed->real_x++;
+            ed->saved_real_x = ed->real_x;
+            if (ed->virt_x == COLS - 2)
+            {
+                ed->offset_x++;
+                ed->saved_offset_x = ed->offset_x;
+            }
+            ed->rerender_flag = 1;
+        }
         get_virt_x(ed);
 }
+
+int getch_unicode()
+{
+    unsigned b1, b2, b3, b4;
+    b1 = getch();
+    int code = 0;
+    if(b1 <= 0x7F)
+    {
+        code = b1;
+    }
+    else if(b1 >= 0xF0)
+    {
+    b2 = getch();
+    b3 = getch();
+    b4 = getch();
+       code = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+    }
+    else if(b1 >= 0xE0)
+    {
+        b2 = getch();
+        b3 = getch();
+        code = (b1 << 16) | (b2 << 8) | b3;
+    }
+    else if(b1 >= 0xC0)
+    {
+        b2 = getch();
+        code = (b1 << 8) | b2;
+    }
+    return code;
+}
+
 
 void editor(char *fname)
 {
@@ -358,14 +489,13 @@ void editor(char *fname)
     WINDOW *win = newwin(LINES - 1, COLS, 0, 0);
     noecho();
     keypad(stdscr, TRUE);
-    // nodelay(stdscr, TRUE);
-    set_escdelay(0);
+    set_escdelay(100);
     int curr_lines = LINES;
     int key = 0;
     int rerender_flag = 1;
     while (key != 27)
     {
-        render_interface(ed);
+        render_interface(ed, key);
         if (key == 410)
         {
             if (LINES != curr_lines)
@@ -390,7 +520,8 @@ void editor(char *fname)
         ed.rerender_flag = 0;
         move(ed.virt_y, ed.virt_x);
         curs_set(1);
-        key = getch();
+        // key = get_wch();
+        get_wch(&key);
         process_key(key, &ed);
     }
     delwin(win);
