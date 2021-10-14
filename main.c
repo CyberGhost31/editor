@@ -104,25 +104,6 @@ unsigned *myfgets(FILE *file, unsigned *size, unsigned *length, int *eof_flag)
             code = ((b1 & 0x1F) << 6) | (b2 & 0x3F);
         }
 
-	/*if(s[i]<=0x7F)
-	{
-		sim_code=s[i];
-	}
-        else if(s[i]>=0xF8)
-	    break
-        else if(s[i]>=0xF0)
-        {
-	    code = ((b1 & 0x07) << 18) | ((b2 & 0x3F) << 12) | ((b3 & 0x3F) << 6) | (b4 & 0x3F);
-        }
-        else if(s[i]>=0xE0)
-	{
-	code = ((b1 & 0x0F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F);
-	}
-        else if(s[i]>=0xC0)
-	{
-	    code = ((b1 & 0x1F) << 6) | (b2 & 0x3F);
-	}*/
-
         if (i == 256 * k - 1)
             str = realloc(str, 256 * (++k));
         str[i++] = code;
@@ -402,7 +383,7 @@ void process_key(int key, editor_state *ed)
             }
 
         }
-        else if ((key == '\t' || key == KEY_BACKSPACE || key == 127) && (1 < ed->real_x))
+        else if ((key == KEY_BACKSPACE || key == 127) && (1 < ed->real_x))
         {
             ed->real_x--;
             ed->saved_real_x = ed->real_x;
@@ -420,7 +401,7 @@ void process_key(int key, editor_state *ed)
             delChr(ed, key);
             ed->rerender_flag = 1;
         }
-        else if ((key >= ' ') && !(key == KEY_DC || key == KEY_BACKSPACE || key == '\t' || key == 127 || key == KEY_UP || key == KEY_DOWN || key == KEY_LEFT || key == KEY_RIGHT))
+        else if (((key >= ' ') || key == '\t') && !(key == KEY_DC || key == KEY_BACKSPACE || key == 127 || key == KEY_UP || key == KEY_DOWN || key == KEY_LEFT || key == KEY_RIGHT))
         {
             insertChr(ed, key);
             ed->real_x++;
@@ -434,37 +415,6 @@ void process_key(int key, editor_state *ed)
         }
         get_virt_x(ed);
 }
-
-int getch_unicode()
-{
-    unsigned b1, b2, b3, b4;
-    b1 = getch();
-    int code = 0;
-    if(b1 <= 0x7F)
-    {
-        code = b1;
-    }
-    else if(b1 >= 0xF0)
-    {
-    b2 = getch();
-    b3 = getch();
-    b4 = getch();
-       code = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
-    }
-    else if(b1 >= 0xE0)
-    {
-        b2 = getch();
-        b3 = getch();
-        code = (b1 << 16) | (b2 << 8) | b3;
-    }
-    else if(b1 >= 0xC0)
-    {
-        b2 = getch();
-        code = (b1 << 8) | b2;
-    }
-    return code;
-}
-
 
 void editor(char *fname)
 {
