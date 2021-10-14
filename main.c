@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <ncurses.h>
 #include <curses.h>
+#include <wchar.h>
 
 struct ln_t
 {
@@ -75,7 +76,7 @@ unsigned *myfgets(FILE *file, unsigned *size, unsigned *length, int *eof_flag)
     str = (unsigned *)malloc(256 * sizeof(unsigned));
     unsigned char b1, b2, b3, b4;
     unsigned code;
-    while ((int)(b1 = fgetc(file)) != EOF && b1 != '\n')
+    while ((b1 = fgetc(file)) != EOF && b1 != '\n')
     {
         code = 0;
         if(b1 <= 0x7F)
@@ -89,19 +90,38 @@ unsigned *myfgets(FILE *file, unsigned *size, unsigned *length, int *eof_flag)
             b2 = fgetc(file);
             b3 = fgetc(file);
             b4 = fgetc(file);
-            code = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+            code = ((b1 & 0x07) << 18) | ((b2 & 0x3F) << 12) | ((b3 & 0x3F) << 6) | (b4 & 0x3F);
         }
         else if(b1 >= 0xE0)
         {
             b2 = fgetc(file);
             b3 = fgetc(file);
-            code = (b1 << 16) | (b2 << 8) | b3;
+            code = ((b1 & 0x0F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F);
         }
         else if(b1 >= 0xC0)
         {
             b2 = fgetc(file);
-            code = (b1 << 8) | b2;
+            code = ((b1 & 0x1F) << 6) | (b2 & 0x3F);
         }
+
+	/*if(s[i]<=0x7F)
+	{
+		sim_code=s[i];
+	}
+        else if(s[i]>=0xF8)
+	    break
+        else if(s[i]>=0xF0)
+        {
+	    code = ((b1 & 0x07) << 18) | ((b2 & 0x3F) << 12) | ((b3 & 0x3F) << 6) | (b4 & 0x3F);
+        }
+        else if(s[i]>=0xE0)
+	{
+	code = ((b1 & 0x0F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F);
+	}
+        else if(s[i]>=0xC0)
+	{
+	    code = ((b1 & 0x1F) << 6) | (b2 & 0x3F);
+	}*/
 
         if (i == 256 * k - 1)
             str = realloc(str, 256 * (++k));
@@ -174,7 +194,8 @@ void clrmem(line *root)
 void print(WINDOW *win, line *a, int offset)
 {
     int c = 1;
-    unsigned b[4];
+    unsigned b[2];
+    b[1] = 0;
     for (int i = 0; i < a->length; i++)
     {
         if(a->str[i] != '\t')
@@ -183,15 +204,8 @@ void print(WINDOW *win, line *a, int offset)
                 offset--;
             else
             {
-                b[0] = a->str[i] >> 24;
-                b[1] = (a->str[i] >> 16) & 0xFF;
-                b[2] = (a->str[i] >> 8) & 0xFF;
-                b[3] = a->str[i] & 0xFF;
-                for (int j = 0; j < 4; j++)
-                {
-                    if (b[j])
-                        waddch(win, (unsigned) b[j]);
-                }
+		b[0]=a->str[i];
+                waddwstr(win, b);
                 c++;
             }
         }
@@ -319,30 +333,7 @@ void save(editor_state *ed)
     do
     {
         for (int i = 0; i < current->length; i++)
-        {
-            if (current->str[i] >= 0x0 && current->str[i] <= 0xFF)
-            {
-                fputc((char) current->str[i], file);
-            }
-            else if (current->str[i] >= 0x100 && current->str[i] <= 0xFFFF)
-            {
-                fputc((current->str[i] & 0xFF00) >> 8, file);
-                fputc(current->str[i] & 0xFF, file);
-            }
-            else if (current->str[i] >= 0x10000 && current->str[i] <= 0xFFFFFF)
-            {
-                fputc((current->str[i] & 0xFF0000) >> 16, file);
-                fputc((current->str[i] & 0xFF00) >> 8, file);
-                fputc(current->str[i] & 0xFF, file);
-            }
-            else if (current->str[i] >= 0x1000000 && current->str[i] <= 0xFFFFFFFF)
-            {
-                fputc((current->str[i] & 0xFF000000) >> 24, file);
-                fputc((current->str[i] & 0xFF0000) >> 16, file);
-                fputc((current->str[i] & 0xFF00) >> 8, file);
-                fputc(current->str[i] & 0xFF, file);
-            }
-        }
+           fputwc(current->str[i], file);
         if ((current = current->next) != NULL)
             fputc('\n', file);
 
