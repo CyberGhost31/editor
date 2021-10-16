@@ -379,7 +379,7 @@ void save(editor_state *ed)
 
 void process_key(int key, editor_state *ed)
 {
-    if (key == 27)
+    if (key == ('S' & 0x1f))
         save(ed);
     if ((key == KEY_UP) && (ed->current->prev != NULL))
     {
@@ -494,7 +494,7 @@ void process_key(int key, editor_state *ed)
     {
         enter(ed);
     }
-    else if (((key >= ' ') || key == '\t') && !(key == KEY_DC || key == KEY_BACKSPACE || key == 127 || key == KEY_UP || key == KEY_DOWN || key == KEY_LEFT || key == KEY_RIGHT))
+    else if (((key >= ' ') || key == '\t') && !(key == KEY_DC || key == KEY_BACKSPACE || key == 127 || key == KEY_UP || key == KEY_DOWN || key == KEY_LEFT || key == KEY_RIGHT ||  key == 410))
     {
         insertChr(ed, key);
         ed->real_x++;
@@ -524,6 +524,7 @@ void editor(char *fname)
     noecho();
     keypad(stdscr, TRUE);
     set_escdelay(100);
+    raw();
     unsigned curr_lines = LINES;
     int key = 0;
     int rerender_flag = 1;
