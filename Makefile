@@ -1,3 +1,3 @@
 all:
 	$(shell mkdir -p build)
-	gcc main.c -lncursesw -o build/editor
+	cc main.c lines.c editor.c render.c fio.c logic.c -lncursesw -o build/editor
