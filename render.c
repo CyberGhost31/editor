@@ -53,8 +53,6 @@ void render_text(WINDOW *win, editor_state ed)
             waddch(win, '~');
         waddch(win, '\n');
     }
-    box(win, 0, 0);
-    wrefresh(win);
 }
 
 void render_interface(editor_state ed, int key)
@@ -64,5 +62,4 @@ void render_interface(editor_state ed, int key)
     attron(A_REVERSE);
     printw("real: %d/%d; (%d)", ed.real_y, ed.real_x, key);
     attroff(A_REVERSE);
-    refresh();
 }

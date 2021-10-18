@@ -34,38 +34,38 @@ void editor(char *fname)
     set_escdelay(100);
     raw();
     unsigned curr_lines = LINES;
-    int key = 410;
+    int key = 0;
     int rerender_flag = 1;
-    while (key != ('X' & 0x1f))
+    while (key != ('Q' & 0x1f))
     {
         curs_set(0);
         render_interface(ed, key);
-        if (key == 410)
-        {
-            if (LINES != curr_lines)
-            {
-                wresize(win, LINES - 1, COLS);
-
-                if (ed.virt_y > LINES - 3)
-                {
-                    while (ed.virt_y > LINES - 3)
-                    {
-                        ed.virt_y--;
-                        ed.top = ed.top->next;
-                    }
-                }
-                curr_lines = LINES;
-            }
-            ed.rerender_flag = 1;
-            box(win, 0, 0);
-        }
+        refresh();
         if (ed.rerender_flag)
+        {
             render_text(win, ed);
+            box(win, 0, 0);
+            wrefresh(win);
+        }
         ed.rerender_flag = 0;
         move(ed.virt_y, ed.virt_x);
         curs_set(1);
         get_wch(&key);
         process_key(key, &ed);
+        if (key == 410)
+        {
+            wresize(win, LINES - 1, COLS);
+            box(win, 0, 0);
+            if (ed.virt_y > LINES - 3)
+            {
+                while (ed.virt_y > LINES - 3 && ed.virt_y > 1)
+                {
+                    ed.virt_y--;
+                    ed.top = ed.top->next;
+                }
+            }
+            ed.rerender_flag = 1;
+        }
     }
     delwin(win);
     endwin();
