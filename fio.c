@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "editor.h"
+#include <string.h>
 #include "lines.h"
 
 wchar_t fget_utf_c(FILE *file)
@@ -97,8 +98,10 @@ line *readfile(char fname[])
 
 void save(editor_state *ed)
 {
-    FILE * file;
+    FILE *file;
     file = fopen(ed->filename, "w");
+    if (file == NULL)
+        return;
     line *current;
     current = ed->root;
     do {
@@ -108,4 +111,5 @@ void save(editor_state *ed)
             fputwc((wchar_t)'\n', file);
     } while (current != NULL);
     fclose(file);
+    ed->edit_flag = 0;
 }

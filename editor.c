@@ -15,19 +15,19 @@ void init_editor(editor_state *a, char *fname)
     a->virt_x = a->real_x = a->saved_real_x = 1;
     a->offset_x = a->saved_offset_x = 0;
     a->rerender_flag = 1;
+    a->exit_flag = 1;
+    a->edit_flag = 0;
 }
 
 void editor(char *fname)
 {
     editor_state ed;
     init_editor(&ed, fname);
-
     if (!initscr())
     {
         printf("Ncurses initialization error.\n");
         exit(1);
     }
-
     WINDOW *win = newwin(LINES - 1, COLS, 0, 0);
     noecho();
     keypad(stdscr, TRUE);
@@ -36,7 +36,7 @@ void editor(char *fname)
     unsigned curr_lines = LINES;
     int key = 0;
     int rerender_flag = 1;
-    while (key != ('Q' & 0x1f))
+    while (ed.exit_flag)
     {
         curs_set(0);
         render_interface(ed, key);
@@ -51,21 +51,7 @@ void editor(char *fname)
         move(ed.virt_y, ed.virt_x);
         curs_set(1);
         get_wch(&key);
-        process_key(key, &ed);
-        if (key == 410)
-        {
-            wresize(win, LINES - 1, COLS);
-            box(win, 0, 0);
-            if (ed.virt_y > LINES - 3)
-            {
-                while (ed.virt_y > LINES - 3 && ed.virt_y > 1)
-                {
-                    ed.virt_y--;
-                    ed.top = ed.top->next;
-                }
-            }
-            ed.rerender_flag = 1;
-        }
+        process_key(key, win, &ed);
     }
     delwin(win);
     endwin();

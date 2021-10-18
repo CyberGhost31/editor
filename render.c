@@ -60,6 +60,6 @@ void render_interface(editor_state ed, int key)
     move(LINES - 1, 1);
     insertln();
     attron(A_REVERSE);
-    printw("real: %d/%d; (%d)", ed.real_y, ed.real_x, key);
+    printw("[%c] %d/%d", (ed.edit_flag == 1) ? '+' : ' ', ed.real_y, ed.real_x);
     attroff(A_REVERSE);
 }

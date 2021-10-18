@@ -21,6 +21,7 @@ void insert_char(editor_state *ed, wchar_t chr)
         temp1 = temp2;
     }
     ed->current->length++;
+    ed->edit_flag = 1;
 }
 
 void del_char(editor_state *ed)
@@ -51,7 +52,6 @@ void process_enter(editor_state *ed)
     ed->current->str[ed->real_x - 1] = 0;
     ed->current->length = ed->real_x - 1;
     addln(ed->current, temp, size, length);
-    ed->rerender_flag = 1;
     ed->current = ed->current->next;
     ed->real_x = ed->saved_real_x = 1;
     ed->real_y++;
@@ -60,6 +60,8 @@ void process_enter(editor_state *ed)
     else
         ed->top = ed->top->next;
     ed->offset_x = ed->saved_offset_x = 0;
+    ed->edit_flag = 1;
+    ed->rerender_flag = 1;
 }
 
 void get_virt_x(editor_state *ed)
@@ -190,6 +192,7 @@ void process_backspace(editor_state *ed)
         else
             ed->top = ed->top->prev;
     }
+    ed->edit_flag = 1;
     ed->rerender_flag = 1;
 }
 
@@ -208,6 +211,7 @@ void process_delete(editor_state *ed)
         ed->current->prev->str[ed->current->prev->length] = 0;
         delln(ed->current->next);
     }
+    ed->edit_flag = 1;
     ed->rerender_flag = 1;
 }
 
@@ -221,14 +225,32 @@ void process_alphanumeric(editor_state *ed, int key)
         ed->offset_x++;
         ed->saved_offset_x = ed->offset_x;
     }
+    ed->edit_flag = 1;
     ed->rerender_flag = 1;
 }
 
-void process_key(int key, editor_state *ed)
+process_change_term_size(editor_state *ed, WINDOW *win)
 {
-    if (key == ('O' & 0x1f))
+    wresize(win, LINES - 1, COLS);
+    box(win, 0, 0);
+    if (ed->virt_y > LINES - 3)
+    {
+        while (ed->virt_y > LINES - 3 && ed->virt_y > 1)
+        {
+            ed->virt_y--;
+            ed->top = ed->top->next;
+        }
+    }
+    ed->rerender_flag = 1;
+}
+
+void process_key(int key, WINDOW *win, editor_state *ed)
+{
+    if (key == ('Q' & 0x1F))
+        ed->exit_flag = 0;
+    else if (key == ('S' & 0x1F))
         save(ed);
-    if (key == KEY_UP)
+    else if (key == KEY_UP)
         process_up(ed);
     else if (key == KEY_DOWN)
         process_down(ed);
@@ -242,7 +264,8 @@ void process_key(int key, editor_state *ed)
         process_delete(ed);
     else if (key == '\n' || key == KEY_ENTER)
         process_enter(ed);
-    else if (key == 410);
+    else if (key == 410)
+        process_change_term_size(ed, win);
     else if (key >= ' ' || key == '\t')
         process_alphanumeric(ed, key);
     get_virt_x(ed);
