@@ -60,6 +60,6 @@ void render_interface(editor_state ed, int key)
     move(LINES - 1, 1);
     insertln();
     attron(A_REVERSE);
-    printw("[%c] %d/%d", (ed.edit_flag == 1) ? '+' : ' ', ed.real_y, ed.real_x);
+    printw("[%s][%c] %d/%d", (ed.filename == NULL) ? "UNTITLED" : ed.filename, (ed.edit_flag == 1) ? '+' : ' ', ed.real_y, ed.real_x);
     attroff(A_REVERSE);
 }

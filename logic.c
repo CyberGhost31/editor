@@ -244,12 +244,23 @@ process_change_term_size(editor_state *ed, WINDOW *win)
     ed->rerender_flag = 1;
 }
 
+void enter_name(editor_state *ed)
+{
+    move(LINES - 1, 1);
+    printw("\n");
+    echo();
+    scanw("%[^\t\n]s", ed->filename);
+    noecho();
+}
+
 void process_key(int key, WINDOW *win, editor_state *ed)
 {
     if (key == ('Q' & 0x1F))
         ed->exit_flag = 0;
     else if (key == ('S' & 0x1F))
         save(ed);
+    else if (key == ('R' & 0x1F))
+        enter_name(ed);
     else if (key == KEY_UP)
         process_up(ed);
     else if (key == KEY_DOWN)

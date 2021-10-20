@@ -7,7 +7,7 @@
 
 void init_editor(editor_state *a, char *fname)
 {
-    a->filename = fname;
+    a->filename = (fname == NULL) ? (char*) malloc(256 * sizeof(char)) : fname;
     a->root = readfile(fname);
     a->current = a->top = a->root;
     a->current = a->root;
@@ -53,6 +53,7 @@ void editor(char *fname)
         get_wch(&key);
         process_key(key, win, &ed);
     }
+    // reset_shell_mode();
     delwin(win);
     endwin();
     clrmem(ed.root);
