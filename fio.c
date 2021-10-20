@@ -41,17 +41,17 @@ wchar_t *fget_utf_s(FILE *file, size_t *size, size_t *length)
 {
     size_t k = 1, i = 0;
     wchar_t *str;
-    str = (wchar_t*) malloc(256* sizeof(wchar_t));
+    str = (wchar_t*) malloc(16 * sizeof(wchar_t));
     unsigned code;
     while ((code = fget_utf_c(file)) != EOF && code != '\n')
     {
-        if (i == 256 *k - 1)
-            str = realloc(str, 256 *(++k) *sizeof(wchar_t));
+        if (i == k - 1)
+            str = realloc(str, (k *= 2) *sizeof(wchar_t));
         str[i++] = code;
     }
     str[i] = 0;
     *length = i;
-    *size = 256 * k;
+    *size = k;
     return str;
 }
 
@@ -65,7 +65,7 @@ line *readfile(char fname[])
     size_t size, length;
     if (file == NULL)
     {
-        temp = (wchar_t*) malloc(256* sizeof(wchar_t));
+        temp = (wchar_t*) malloc(256 * sizeof(wchar_t));
         temp[0] = 0;
         root = initln(temp, 256, 0);
     }
