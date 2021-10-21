@@ -60,7 +60,7 @@ void process_enter(editor_state *ed)
         ed->virt_y++;
     else
         ed->top = ed->top->next;
-    ed->offset_x = ed->saved_offset_x = 0;
+    ed->offset_x = 0;
     ed->edit_flag = 1;
     ed->rerender_flag = 1;
 }
@@ -72,16 +72,14 @@ void get_virt_x(editor_state *ed)
     for (int i = 0; i < ed->real_x - 1; i++)
         if (ed->current->str[i] == 9) tabs++;
     num_of_chars = ed->real_x - tabs + tabs * 4;
-    if (ed->saved_offset_x > ed->offset_x)
-        ed->offset_x = ed->saved_offset_x;
-    if (num_of_chars - ed->offset_x < 1)
+    if ((int)num_of_chars - (int)ed->offset_x < 1)
     {
 
-        ed->virt_x = num_of_chars % (COLS - 1);
+        ed->virt_x = num_of_chars % (COLS - 2);
         ed->offset_x = num_of_chars - ed->virt_x;
         ed->rerender_flag = 1;
     }
-    else if (num_of_chars - ed->offset_x > COLS - 2)
+    else if ((int)num_of_chars - (int)ed->offset_x > COLS - 2)
     {
         ed->virt_x = COLS - 2;
         ed->offset_x = num_of_chars - ed->virt_x;
@@ -141,7 +139,6 @@ void process_left(editor_state *ed)
         if (ed->virt_x == 1)
         {
             ed->offset_x--;
-            ed->saved_offset_x = ed->offset_x;
             ed->rerender_flag = 1;
         }
     }
@@ -156,7 +153,6 @@ void process_rigth(editor_state *ed)
         if (ed->virt_x == COLS - 2)
         {
             ed->offset_x++;
-            ed->saved_offset_x = ed->offset_x;
             ed->rerender_flag = 1;
         }
     }
@@ -169,10 +165,7 @@ void process_backspace(editor_state *ed)
         ed->real_x--;
         ed->saved_real_x = ed->real_x;
         if (ed->virt_x == 1)
-        {
             ed->offset_x--;
-            ed->saved_offset_x = ed->offset_x;
-        }
         del_char(ed);
     }
     else if (ed->real_x == 1 && ed->current->prev != NULL)
@@ -222,10 +215,7 @@ void process_alphanumeric(editor_state *ed, int key)
     ed->real_x++;
     ed->saved_real_x = ed->real_x;
     if (ed->virt_x == COLS - 2)
-    {
         ed->offset_x++;
-        ed->saved_offset_x = ed->offset_x;
-    }
     ed->edit_flag = 1;
     ed->rerender_flag = 1;
 }
