@@ -183,7 +183,7 @@ void process_backspace(editor_state *ed)
         ed->current->prev->str = realloc(ed->current->prev->str, ed->current->prev->size * sizeof(wchar_t));
         for (size_t i = 0; i < ed->current->length; i++)
             ed->current->prev->str[ed->current->prev->length + i] = ed->current->str[i];
-        ed->real_x = ed->current->prev->length + 1;
+        ed->real_x = ed->saved_real_x = ed->current->prev->length + 1;
         ed->current->prev->length += ed->current->length;
         ed->current->prev->str[ed->current->prev->length] = 0;
         ed->current = ed->current->prev;
@@ -230,7 +230,7 @@ void process_alphanumeric(editor_state *ed, int key)
     ed->rerender_flag = 1;
 }
 
-process_change_term_size(editor_state *ed, WINDOW *win)
+void process_change_term_size(editor_state *ed, WINDOW *win)
 {
     wresize(win, LINES - 1, COLS);
     box(win, 0, 0);
