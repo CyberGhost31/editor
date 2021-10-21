@@ -7,13 +7,13 @@
 
 void init_editor(editor_state *a, char *fname)
 {
-    a->filename = (fname == NULL) ? (char*) malloc(256 * sizeof(char)) : fname;
+    a->filename = fname;
     a->root = readfile(fname);
     a->current = a->top = a->root;
     a->current = a->root;
     a->virt_y = a->real_y = 1;
     a->virt_x = a->real_x = a->saved_real_x = 1;
-    a->offset_x = a->saved_offset_x = 0;
+    a->offset_x = 0;
     a->rerender_flag = 1;
     a->exit_flag = 1;
     a->edit_flag = 0;
@@ -53,7 +53,6 @@ void editor(char *fname)
         get_wch(&key);
         process_key(key, win, &ed);
     }
-    // reset_shell_mode();
     delwin(win);
     endwin();
     clrmem(ed.root);

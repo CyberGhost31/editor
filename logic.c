@@ -76,6 +76,8 @@ void get_virt_x(editor_state *ed)
     {
 
         ed->virt_x = num_of_chars % (COLS - 2);
+        if (ed->virt_x == 0)
+            ed->virt_x = COLS - 2;
         ed->offset_x = num_of_chars - ed->virt_x;
         ed->rerender_flag = 1;
     }
