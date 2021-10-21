@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <ncurses.h>
 #include <stdlib.h>
+#include <string.h>
 #include "lines.h"
 #include "editor.h"
 #include "fio.h"
@@ -246,10 +247,17 @@ process_change_term_size(editor_state *ed, WINDOW *win)
 
 void enter_name(editor_state *ed)
 {
+    char temp[256];
+    temp[0] = 0;
     move(LINES - 1, 1);
-    printw("\n");
+    printw("Enter name: \n");
     echo();
     scanw("%[^\t\n]s", ed->filename);
+    if (temp[0] != 0)
+    {
+        ed->filename = (char *) malloc(256 * sizeof(char));
+        strcpy(ed->filename, temp);
+    }
     noecho();
 }
 

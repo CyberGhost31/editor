@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "logic.h"
 #include "editor.h"
 #include <string.h>
 #include "lines.h"
@@ -99,6 +100,8 @@ line *readfile(char fname[])
 void save(editor_state *ed)
 {
     FILE *file;
+    if (ed->filename == NULL)
+        enter_name(ed);
     file = fopen(ed->filename, "w");
     if (file == NULL)
         return;
