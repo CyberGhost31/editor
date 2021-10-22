@@ -253,6 +253,50 @@ void enter_name(editor_state *ed)
     noecho();
 }
 
+void process_Home(editor_state *ed)
+{
+    ed->saved_real_x = ed->real_x = 1;
+}
+
+void process_End(editor_state *ed)
+{
+    ed->saved_real_x = ed->real_x = ed->current->length + 1;
+}
+
+void process_PgUp(editor_state *ed)
+{
+    for (size_t i = 1; (i < LINES - 2) && (ed->top->prev != NULL); i++)
+    {
+        ed->top = ed->top->prev;
+        ed->real_y--;
+    }
+    ed->current = ed->top;
+    ed->virt_y = 1;
+    if (ed->current->length < ed->saved_real_x)
+        ed->real_x = ed->current->length + 1;
+    else
+        ed->real_x = ed->saved_real_x;
+    ed->rerender_flag = 1;
+
+}
+
+void process_PgDown(editor_state *ed)
+{
+    for (size_t i = 1; (i < LINES - 2) && (ed->top->next != NULL); i++)
+    {
+        ed->top = ed->top->next;
+        ed->real_y++;
+    }
+    ed->current = ed->top;
+    ed->virt_y = 1;
+    if (ed->current->length < ed->saved_real_x)
+        ed->real_x = ed->current->length + 1;
+    else
+        ed->real_x = ed->saved_real_x;
+    ed->rerender_flag = 1;
+
+}
+
 void process_key(int key, WINDOW *win, editor_state *ed)
 {
     if (key == ('Q' & 0x1F))
@@ -277,6 +321,14 @@ void process_key(int key, WINDOW *win, editor_state *ed)
         process_enter(ed);
     else if (key == 410)
         process_change_term_size(ed, win);
+    else if (key == 339)
+        process_PgUp(ed);
+    else if (key == 338)
+        process_PgDown(ed);
+    else if (key == 262)
+        process_Home(ed);
+    else if (key == 360)
+        process_End(ed);
     else if (key >= ' ' || key == '\t')
         process_alphanumeric(ed, key);
     get_virt_x(ed);
