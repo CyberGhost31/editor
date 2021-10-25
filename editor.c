@@ -31,11 +31,11 @@ void editor(char *fname)
     WINDOW *win = newwin(LINES - 1, COLS, 0, 0);
     noecho();
     keypad(stdscr, TRUE);
-    set_escdelay(100);
     raw();
     unsigned curr_lines = LINES;
     int key = 0;
     int rerender_flag = 1;
+    start_color();
     while (ed.exit_flag)
     {
         curs_set(0);

@@ -211,7 +211,7 @@ void process_delete(editor_state *ed)
     ed->rerender_flag = 1;
 }
 
-void process_alphanumeric(editor_state *ed, int key)
+void process_symbolic(editor_state *ed, int key)
 {
     insert_char(ed, key);
     ed->real_x++;
@@ -330,6 +330,6 @@ void process_key(int key, WINDOW *win, editor_state *ed)
     else if (key == 360)
         process_End(ed);
     else if (key >= ' ' || key == '\t')
-        process_alphanumeric(ed, key);
+        process_symbolic(ed, key);
     get_virt_x(ed);
 }

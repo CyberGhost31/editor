@@ -6,4 +6,6 @@
 
 line *readfile(char fname[]);
 
+int get_file_type(char *filename);
+
 void save(editor_state *ed);

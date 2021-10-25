@@ -97,6 +97,15 @@ line *readfile(char fname[])
     return root;
 }
 
+int get_file_type(char *filename)
+{
+    size_t len = strlen(filename);
+    if (filename[len - 2] == '.' && (filename[len - 1] == 'c' || filename[len - 1] == 'h'))
+        return 1;
+    else
+        return 0;
+}
+
 void save(editor_state *ed)
 {
     FILE *file;
