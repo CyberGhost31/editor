@@ -85,7 +85,7 @@ int is_curly_brackets(wchar_t a)
 
 void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset, c_token_type *gl)
 {
-    init_pair(1, 15, COLOR_BLACK);
+    init_pair(1, COLOR_WHITE, COLOR_BLACK);
     init_pair(2, 10, COLOR_BLACK);
     init_pair(3, COLOR_YELLOW, COLOR_BLACK);
     init_pair(4, COLOR_BLUE, COLOR_BLACK);

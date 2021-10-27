@@ -38,7 +38,7 @@ line *addln(line *ln, wchar_t *string, size_t size, size_t length)
     temp->length = length;
     if (p != NULL)
         p->prev = temp;
-    return (temp);
+    return temp;
 }
 
 line *delln(line *ln)
@@ -51,7 +51,7 @@ line *delln(line *ln)
     if (next != NULL)
         next->prev = ln->prev;
     free(ln);
-    return (prev);
+    return prev;
 }
 
 void clrmem(line *root)

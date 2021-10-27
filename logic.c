@@ -174,7 +174,7 @@ void process_backspace(editor_state *ed)
     {
         ed->real_y--;    
         while (ed->current->length + ed->current->prev->length + 1 >= ed->current->prev->size)
-            ed->current->prev->size += 256;
+            ed->current->prev->size += 16 * sizeof(wchar_t);
         ed->current->prev->str = realloc(ed->current->prev->str, ed->current->prev->size * sizeof(wchar_t));
         for (size_t i = 0; i < ed->current->length; i++)
             ed->current->prev->str[ed->current->prev->length + i] = ed->current->str[i];
@@ -182,6 +182,7 @@ void process_backspace(editor_state *ed)
         ed->current->prev->length += ed->current->length;
         ed->current->prev->str[ed->current->prev->length] = 0;
         ed->current = ed->current->prev;
+        free(ed->current->next->str);
         delln(ed->current->next);
         if (1 < ed->virt_y)
             ed->virt_y--;
@@ -199,12 +200,13 @@ void process_delete(editor_state *ed)
     else if (ed->real_x == ed->current->length + 1 && ed->current->next != NULL)
     {
         while (ed->current->length + ed->current->next->length + 1 >= ed->current->size)
-            ed->current->size += 256;
+            ed->current->size += 16 * sizeof(wchar_t);
         ed->current->str = realloc(ed->current->str, ed->current->size * sizeof(wchar_t));
         for (size_t i = 0; i < ed->current->next->length; i++)
             ed->current->str[ed->current->length + i] = ed->current->next->str[i];
         ed->current->length += ed->current->next->length;
-        ed->current->prev->str[ed->current->prev->length] = 0;
+        ed->current->str[ed->current->length] = 0;
+        free(ed->current->next->str);
         delln(ed->current->next);
     }
     ed->edit_flag = 1;

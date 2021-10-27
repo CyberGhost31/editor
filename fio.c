@@ -16,7 +16,7 @@ wchar_t fget_utf_c(FILE *file)
         code = b1;
     }
     else if (b1 >= 0xF8)
-        return -1;
+        return EOF;
     else if (b1 >= 0xF0)
     {
         b2 = fgetc(file);

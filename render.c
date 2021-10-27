@@ -74,10 +74,14 @@ void render_text(WINDOW *win, editor_state ed)
 
 void render_interface(editor_state ed, int key)
 {
-    init_pair(11, 8, COLOR_BLACK);
+    size_t y, x;
+    init_pair(1, COLOR_WHITE, COLOR_BLACK);
     move(LINES - 1, 1);
     insertln();
-    attron(A_REVERSE | COLOR_PAIR(11));
+    attron(A_REVERSE | COLOR_PAIR(1));
     printw("[%s][%c] %d/%d", (ed.filename == NULL) ? "UNTITLED" : ed.filename, (ed.edit_flag == 1) ? '+' : ' ', ed.real_y, ed.real_x);
+    getyx(stdscr, y, x);
+    for (int i = x; i < COLS; i++)
+        addch(' ');
     attroff(A_REVERSE);
 }
