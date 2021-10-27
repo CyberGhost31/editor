@@ -35,7 +35,8 @@ void editor(char *fname)
     unsigned curr_lines = LINES;
     int key = 0;
     int rerender_flag = 1;
-    start_color();
+    if (can_change_color())
+        start_color();
     while (ed.exit_flag)
     {
         curs_set(0);
