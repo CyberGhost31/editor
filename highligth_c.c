@@ -15,6 +15,7 @@ enum c_tk_type_t
     string,
     operator,
     empty,
+    delimeter,
     undefined
 };
 
@@ -200,10 +201,18 @@ void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset
             if (*gl < t)
                 t = *gl;
         }
-        else if (a [i] == '~' || a[i] == '^' || a[i] == '.' || a[i] == ',' || a[i] == ';' || a[i] == '?' || a[i] == ':')
+        else if (a[i] == '~' || a[i] == '^' || a[i] == '?' || a[i] == ':')
         {
             i++;
             t = operator;
+            if (*gl < t)
+                t = *gl;
+        }
+
+        else if (a[i] == '.' || a[i] == ',' || a[i] == ';')
+        {
+            i++;
+            t = delimeter;
             if (*gl < t)
                 t = *gl;
         }

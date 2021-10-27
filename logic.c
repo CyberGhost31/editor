@@ -239,22 +239,6 @@ void process_change_term_size(editor_state *ed, WINDOW *win)
     ed->rerender_flag = 1;
 }
 
-void enter_name(editor_state *ed)
-{
-    char temp[256];
-    temp[0] = 0;
-    move(LINES - 1, 1);
-    printw("Enter name: \n");
-    echo();
-    scanw("%[^\t\n]s", ed->filename);
-    if (temp[0] != 0)
-    {
-        ed->filename = (char *) malloc(256 * sizeof(char));
-        strcpy(ed->filename, temp);
-    }
-    noecho();
-}
-
 void process_Home(editor_state *ed)
 {
     ed->saved_real_x = ed->real_x = 1;

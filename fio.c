@@ -106,6 +106,22 @@ int get_file_type(char *filename)
         return 0;
 }
 
+void enter_name(editor_state *ed)
+{
+    char temp[256];
+    temp[0] = 0;
+    move(LINES - 1, 1);
+    printw("Enter name: \n");
+    echo();
+    scanw("%[^\t\n]s", ed->filename);
+    if (temp[0] != 0)
+    {
+        ed->filename = (char *) malloc(256 * sizeof(char));
+        strcpy(ed->filename, temp);
+    }
+    noecho();
+}
+
 void save(editor_state *ed)
 {
     FILE *file;
