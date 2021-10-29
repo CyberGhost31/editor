@@ -99,6 +99,8 @@ line *readfile(char fname[])
 
 int get_file_type(char *filename)
 {
+    if (filename == NULL)
+        return 0;
     size_t len = strlen(filename);
     if (filename[len - 2] == '.' && (filename[len - 1] == 'c' || filename[len - 1] == 'h'))
         return 1;
