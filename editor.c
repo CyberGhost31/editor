@@ -1,5 +1,7 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <ncurses.h>
+#include <string.h>
 #include "lines.h"
 #include "fio.h"
 #include "render.h"
@@ -7,7 +9,8 @@
 
 void init_editor(editor_state *a, char *fname)
 {
-    a->filename = fname;
+    a->filename = (char *) malloc(256 * sizeof(char));
+    strcpy(a->filename, fname);
     a->root = readfile(fname);
     a->current = a->top = a->root;
     a->current = a->root;
