@@ -115,9 +115,10 @@ void enter_name(editor_state *ed)
     move(LINES - 1, 1);
     printw("Enter name: \n");
     echo();
-    scanw("%[^\t\n]s", ed->filename);
+    scanw("%[^\t\n]s", temp);
     if (temp[0] != 0)
     {
+        free(ed->filename);
         ed->filename = (char *) malloc(256 * sizeof(char));
         strcpy(ed->filename, temp);
     }
