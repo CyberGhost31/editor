@@ -118,7 +118,8 @@ void enter_name(editor_state *ed)
     scanw("%[^\t\n]s", temp);
     if (temp[0] != 0)
     {
-        free(ed->filename);
+        if (ed->filename != NULL)
+            free(ed->filename);
         ed->filename = (char *) malloc(256 * sizeof(char));
         strcpy(ed->filename, temp);
     }

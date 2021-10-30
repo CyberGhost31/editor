@@ -9,8 +9,13 @@
 
 void init_editor(editor_state *a, char *fname)
 {
-    a->filename = (char *) malloc(256 * sizeof(char));
-    strcpy(a->filename, fname);
+    if (fname != NULL)
+    {
+        a->filename = (char *) malloc(256 * sizeof(char));
+        strcpy(a->filename, fname);
+    }
+    else
+        a->filename = NULL;
     a->root = readfile(fname);
     a->current = a->top = a->root;
     a->current = a->root;
