@@ -21,6 +21,8 @@ enum c_tk_type_t
 
 typedef enum c_tk_type_t c_token_type;
 
+
+
 size_t wstrlen(wchar_t *a)
 {
     size_t i = 0;
@@ -33,7 +35,9 @@ void wadd_token(WINDOW *win, wchar_t *a, size_t left, size_t rigth, size_t *offs
 {
     for (size_t i = left; i <= rigth; i++)
     {
-        if (a[i] != '\t')
+	if (a[i] == 0)
+            return;
+	if (a[i] != '\t')
         {
             if (*offset > 0)
                 (*offset)--;
@@ -84,6 +88,51 @@ int is_curly_brackets(wchar_t a)
     return a == '{' || a == '}';
 }
 
+c_token_type get_c_token_type(wchar_t *a, size_t left, size_t rigth)
+{
+    char types[8][256] = {"char", "int", "float", "double", "void", "struct", "union", "enum"};
+    char modifiers[4][256] = {"signed", "unsigned", "long", "short"};
+    char keywords[][256] = {"auto", "break", "case", "const", "continue", "default", "do", "else", "extern", "for", "goto", "if", "inline", "register", "restrict", "return", "sizeof", "static", "switch", "typedef", "volatile", "while"};
+    size_t j;
+    for (size_t i = 0; i <= 7; i++)
+    {
+        j = 0;
+        while (types[i][j] != 0 && left + j <= rigth && types[i][j] == a[left + j])
+	{
+		j++;
+	}
+	if (left + j == rigth + 1 && types[i][j] == 0)
+	{
+		return type;
+	}
+    }
+    for (size_t i = 0; i <= 3; i++)
+    {
+        j = 0;
+	while(modifiers[i][j] != 0 && left + j <= rigth && modifiers[i][j] == a[left + j])
+	{
+		j++;
+	}
+	if (left + j == rigth + 1 && modifiers[i][j] == 0)
+	{
+		return type;
+	}
+    }
+    for (size_t i = 0; i <= 22; i++)
+    {
+        j = 0;
+	while(keywords[i][j] != 0 && left + j <= rigth && keywords[i][j] == a[left + j])
+	{
+		j++;
+	}
+	if (left + j == rigth + 1 && keywords[i][j] == 0)
+	{
+		return keyword;
+	}
+    }
+    return undefined;
+}
+
 void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset, c_token_type *gl)
 {
     init_pair(1, COLOR_WHITE, COLOR_BLACK);
@@ -93,6 +142,7 @@ void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset
     init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
     init_pair(6, COLOR_CYAN, COLOR_BLACK);
     init_pair(7, 8, COLOR_BLACK);
+    init_pair(8, COLOR_GREEN, COLOR_BLACK);
     size_t i = 0, j;
     size_t left, rigth;
     c_token_type t;
@@ -150,7 +200,7 @@ void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset
             do
             {
                 i++;
-            } while (!(a[i] == '\"' && a[i - 1] != '\\') && !(a[i - 1] == '\\' && a[i - 2] == '\\'));
+            } while (!(a[i] == '\"' && a[i - 1] != '\\') && !(a[i - 1] == '\\' && a[i - 2] == '\\') && i < len);
             i++;
             t = string;
             if (*gl < t)
@@ -161,7 +211,7 @@ void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset
             do
             {
                 i++;
-            } while (!(a[i] == '\'' && a[i - 1] != '\\') && !(a[i - 1] == '\\' && a[i - 2] == '\\'));
+            } while (!(a[i] == '\'' && a[i - 1] != '\\') && !(a[i - 1] == '\\' && a[i - 2] == '\\') && i < len);
             i++;
             t = chararcter;
             if (*gl < t)
@@ -223,6 +273,8 @@ void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset
                 t = *gl;
         }
         rigth = i - 1;
+	if (t == undefined)
+            t = get_c_token_type(a, left, rigth);
         if (start)
         {
             if (t == multiline_comment || t == oneline_comment)
@@ -235,6 +287,10 @@ void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset
                 wadd_token(win, a, left, rigth, &temp_offset, COLOR_PAIR(6));
             else if (t == operator)
                 wadd_token(win, a, left, rigth, &temp_offset, COLOR_PAIR(4));
+	    else if (t == type)
+		wadd_token(win, a, left, rigth, &temp_offset, COLOR_PAIR(3));
+	    else if (t == keyword)
+		wadd_token(win, a, left, rigth, &temp_offset, COLOR_PAIR(8));
             else
                 wadd_token(win, a, left, rigth, &temp_offset, COLOR_PAIR(1));
         }
