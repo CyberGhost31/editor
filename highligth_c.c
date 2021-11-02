@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <wchar.h>
+#include "render.h"
 
 enum c_tk_type_t
 {
@@ -35,8 +36,6 @@ void wadd_token(WINDOW *win, wchar_t *a, size_t left, size_t rigth, size_t *offs
 {
     for (size_t i = left; i <= rigth; i++)
     {
-	if (a[i] == 0)
-            return;
 	if (a[i] != '\t')
         {
             if (*offset > 0)
@@ -201,7 +200,7 @@ void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset
             {
                 i++;
             } while (!(a[i] == '\"' && a[i - 1] != '\\') && !(a[i - 1] == '\\' && a[i - 2] == '\\') && i < len);
-            i++;
+            if (i < len) i++;
             t = string;
             if (*gl < t)
                 t = *gl;
@@ -212,7 +211,7 @@ void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset
             {
                 i++;
             } while (!(a[i] == '\'' && a[i - 1] != '\\') && !(a[i - 1] == '\\' && a[i - 2] == '\\') && i < len);
-            i++;
+            if (i < len) i++;
             t = chararcter;
             if (*gl < t)
                 t = *gl;
@@ -278,21 +277,21 @@ void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset
         if (start)
         {
             if (t == multiline_comment || t == oneline_comment)
-                wadd_token(win, a, left, rigth, &temp_offset, COLOR_PAIR(7));
+                waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(7));
             else if (t == preproc_dir)
-                wadd_token(win, a, left, rigth, &temp_offset, COLOR_PAIR(2));
+                waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(2));
             else if (t == number)
-                wadd_token(win, a, left, rigth, &temp_offset, COLOR_PAIR(5));
+                waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(5));
             else if (t == string || t == chararcter)
-                wadd_token(win, a, left, rigth, &temp_offset, COLOR_PAIR(6));
+                waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(6));
             else if (t == operator)
-                wadd_token(win, a, left, rigth, &temp_offset, COLOR_PAIR(4));
-	    else if (t == type)
-		wadd_token(win, a, left, rigth, &temp_offset, COLOR_PAIR(3));
-	    else if (t == keyword)
-		wadd_token(win, a, left, rigth, &temp_offset, COLOR_PAIR(8));
+                waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(4));
+            else if (t == type)
+		        waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(3));
+	        else if (t == keyword)
+		        waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(8));
             else
-                wadd_token(win, a, left, rigth, &temp_offset, COLOR_PAIR(1));
+                waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(1));
         }
     }
     if (*gl == preproc_dir || *gl == oneline_comment)

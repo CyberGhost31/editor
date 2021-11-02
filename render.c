@@ -4,29 +4,35 @@
 #include "highligth_c.h"
 #include "fio.h"
 
-void output_text_line(WINDOW *win, line *a, int offset)
+void waddstrfrag(WINDOW *win, wchar_t *a, size_t left, size_t rigth, size_t *offset, int attr)
 {
-    for (size_t i = 0; i < a->length; i++)
+    for (size_t i = left; i <= rigth; i++)
     {
-        if (a->str[i] != '\t')
+	if (a[i] != '\t')
         {
-            if (offset)
-                offset--;
+            if (*offset > 0)
+                (*offset)--;
             else
-                waddch(win, (wchar_t) a->str[i]);
+                waddch(win, a[i] | attr);
         }
         else
         {
-            if (offset >= 4)
-                offset -= 4;
+            if (*offset >= 4)
+                *offset -= 4;
             else
             {
-                for (short j = 0; j < 4 - offset; j++)
-                    waddch(win, (wchar_t) ' ');
-                offset = 0;
+                for (short j = 0; j < 4 - *offset; j++)
+                    waddch(win, ' ');
+                *offset = 0;
             }
         }
     }
+}
+
+void output_text_line(WINDOW *win, line *a, size_t offset)
+{
+    if (a->length != 0)
+        waddstrfrag(win, a->str, 0, a->length - 1, &offset, COLOR_PAIR(1));
 }
 
 void render_text(WINDOW *win, editor_state ed)
