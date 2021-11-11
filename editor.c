@@ -44,7 +44,10 @@ void editor(char *fname)
     int key = 0;
     int rerender_flag = 1;
     if (can_change_color())
+    {
         start_color();
+        set_colors();
+    }
     while (ed.exit_flag)
     {
         curs_set(0);

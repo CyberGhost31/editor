@@ -134,14 +134,6 @@ c_token_type get_c_token_type(wchar_t *a, size_t left, size_t rigth)
 
 void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset, c_token_type *gl)
 {
-    init_pair(1, COLOR_WHITE, COLOR_BLACK);
-    init_pair(2, 10, COLOR_BLACK);
-    init_pair(3, COLOR_YELLOW, COLOR_BLACK);
-    init_pair(4, COLOR_BLUE, COLOR_BLACK);
-    init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
-    init_pair(6, COLOR_CYAN, COLOR_BLACK);
-    init_pair(7, 8, COLOR_BLACK);
-    init_pair(8, COLOR_GREEN, COLOR_BLACK);
     size_t i = 0, j;
     size_t left, rigth;
     c_token_type t;
