@@ -285,37 +285,24 @@ void process_PgDown(editor_state *ed)
 
 void process_key(int key, WINDOW *win, editor_state *ed)
 {
-    if (key == ('Q' & 0x1F))
-        ed->exit_flag = 0;
-    else if (key == ('S' & 0x1F))
-        save(ed);
-    else if (key == ('R' & 0x1F))
-        enter_name(ed);
-    else if (key == KEY_UP)
-        process_up(ed);
-    else if (key == KEY_DOWN)
-        process_down(ed);
-    else if (key == KEY_LEFT)
-        process_left(ed);
-    else if (key == KEY_RIGHT)
-        process_rigth(ed);
-    else if ((key == KEY_BACKSPACE || key == 127 || key == '\b'))
-        process_backspace(ed);
-    else if (key == KEY_DC)
-        process_delete(ed);
-    else if (key == '\n' || key == KEY_ENTER)
-        process_enter(ed);
-    else if (key == 410)
-        process_change_term_size(ed, win);
-    else if (key == 339)
-        process_PgUp(ed);
-    else if (key == 338)
-        process_PgDown(ed);
-    else if (key == 262)
-        process_Home(ed);
-    else if (key == 360)
-        process_End(ed);
-    else if (key >= ' ' || key == '\t')
-        process_symbolic(ed, key);
+    switch (key)
+    {
+        case 'Q' & 0x1F:        ed->exit_flag = 0;                  break;
+        case 'S' & 0xF1:        save(ed);                           break;
+        case 'R' & 0x1F:        enter_name(ed);                     break;
+        case KEY_UP:            process_up(ed);                     break;
+        case KEY_DOWN:          process_down(ed);                   break;
+        case KEY_LEFT:          process_left(ed);                   break;
+        case KEY_RIGHT:         process_rigth(ed);                  break;
+        case 127:               process_backspace(ed);              break;
+        case KEY_DC:            process_delete(ed);                 break;
+        case '\n':              process_enter(ed);                  break;
+        case KEY_RESIZE:        process_change_term_size(ed, win);  break;
+        case KEY_PPAGE:         process_PgUp(ed);                   break;
+        case KEY_NPAGE:         process_PgDown(ed);                 break;
+        case KEY_HOME:          process_Home(ed);                   break;
+        case KEY_END:           process_End(ed);                    break;
+        default: if (key >= ' ' || key == '\t') process_symbolic(ed, key);
+    }
     get_virt_x(ed);
 }

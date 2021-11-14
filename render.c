@@ -85,7 +85,7 @@ void render_interface(editor_state ed, int key)
     move(LINES - 1, 1);
     insertln();
     attron(A_REVERSE | COLOR_PAIR(1));
-    printw("[%s][%c] %d/%d", (ed.filename == NULL) ? "UNTITLED" : ed.filename, (ed.edit_flag == 1) ? '+' : ' ', ed.real_y, ed.real_x);
+    printw("[%s][%c] %d/%d %d", (ed.filename == NULL) ? "UNTITLED" : ed.filename, (ed.edit_flag == 1) ? '+' : ' ', ed.real_y, ed.real_x, key);
     getyx(stdscr, y, x);
     for (int i = x; i < COLS; i++)
         addch(' ');

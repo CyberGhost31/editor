@@ -6,23 +6,19 @@
 
 enum c_tk_type_t
 {
-    multiline_comment,
-    oneline_comment,
-    preproc_dir,
-    keyword,
-    type,
-    number,
-    chararcter,
-    string,
-    operator,
-    empty,
-    delimeter,
-    undefined
+    multiline_comment = 1,
+    oneline_comment = 1,
+    preproc_dir = 2,
+    keyword = 3,
+    type = 4,
+    number = 5,
+    string_or_chararcter = 6,
+    operator = 7,
+    other = 8,
+    undefined = 9
 };
 
 typedef enum c_tk_type_t c_token_type;
-
-
 
 size_t wstrlen(wchar_t *a)
 {
@@ -30,31 +26,6 @@ size_t wstrlen(wchar_t *a)
     while (a[i])
         i++;
     return i;
-}
-
-void wadd_token(WINDOW *win, wchar_t *a, size_t left, size_t rigth, size_t *offset, int attr)
-{
-    for (size_t i = left; i <= rigth; i++)
-    {
-	if (a[i] != '\t')
-        {
-            if (*offset > 0)
-                (*offset)--;
-            else
-                waddch(win, a[i] | attr);
-        }
-        else
-        {
-            if (*offset >= 4)
-                *offset -= 4;
-            else
-            {
-                for (short j = 0; j < 4 - *offset; j++)
-                    waddch(win, ' ');
-                *offset = 0;
-            }
-        }
-    }
 }
 
 int is_letter(wchar_t a)
@@ -89,45 +60,60 @@ int is_curly_brackets(wchar_t a)
 
 c_token_type get_c_token_type(wchar_t *a, size_t left, size_t rigth)
 {
-    char types[8][256] = {"char", "int", "float", "double", "void", "struct", "union", "enum"};
-    char modifiers[4][256] = {"signed", "unsigned", "long", "short"};
-    char keywords[][256] = {"auto", "break", "case", "const", "continue", "default", "do", "else", "extern", "for", "goto", "if", "inline", "register", "restrict", "return", "sizeof", "static", "switch", "typedef", "volatile", "while"};
+    char types[8][256] = {
+        "char", "int",
+        "float", "double",
+        "void", "struct",
+        "union", "enum"
+    };
+    char modifiers[4][256] = {
+        "signed", "unsigned",
+        "long", "short"
+    };
+    char keywords[][256] = {
+        "auto",     "break",    "case",     "const",
+        "continue", "default",  "do",       "else",
+        "extern",   "for",      "goto",     "if",
+        "inline",   "register", "restrict", "return",
+        "sizeof",   "static",   "switch",   "typedef",
+        "volatile", "while"
+    };
     size_t j;
     for (size_t i = 0; i <= 7; i++)
     {
         j = 0;
         while (types[i][j] != 0 && left + j <= rigth && types[i][j] == a[left + j])
-	{
-		j++;
-	}
-	if (left + j == rigth + 1 && types[i][j] == 0)
-	{
-		return type;
-	}
+	    {
+		    j++;
+	    }
+	    if (left + j == rigth + 1 && types[i][j] == 0)
+	    {
+		    return type;
+	    }
     }
     for (size_t i = 0; i <= 3; i++)
     {
         j = 0;
-	while(modifiers[i][j] != 0 && left + j <= rigth && modifiers[i][j] == a[left + j])
-	{
-		j++;
-	}
-	if (left + j == rigth + 1 && modifiers[i][j] == 0)
-	{
-		return type;
-	}
+	    while(modifiers[i][j] != 0 && left + j <= rigth && modifiers[i][j] == a[left + j])
+	    {
+		    j++;
+	    }
+	    if (left + j == rigth + 1 && modifiers[i][j] == 0)
+	    {
+		    return type;
+	    }
     }
     for (size_t i = 0; i <= 22; i++)
     {
         j = 0;
-	while(keywords[i][j] != 0 && left + j <= rigth && keywords[i][j] == a[left + j])
-	{
-		j++;
-	}
-	if (left + j == rigth + 1 && keywords[i][j] == 0)
-	{
-		return keyword;
-	}
+	    while(keywords[i][j] != 0 && left + j <= rigth && keywords[i][j] == a[left + j])
+	    {
+		    j++;
+	    }
+	    if (left + j == rigth + 1 && keywords[i][j] == 0)
+	    {
+		    return keyword;
+	    }
     }
     return undefined;
 }
@@ -176,6 +162,7 @@ void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset
         {
             while (a[i] <= ' ' && a[i] > '\0')
                 i++;
+            t = other;
             if (*gl < t)
                 t = *gl;
         }
@@ -186,25 +173,19 @@ void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset
             if (*gl < t)
                 t = *gl;
         }
-        else if (a[i] == '\"')
+        else if (a[i] == '\"' || a[i] == '\'')
         {
             do
             {
                 i++;
-            } while (!(a[i] == '\"' && a[i - 1] != '\\') && !(a[i - 1] == '\\' && a[i - 2] == '\\') && i < len);
+            } while
+            (
+                !((a[i] == '\"' || a[i] == '\'') && a[i - 1] != '\\') &&
+                !(a[i - 1] == '\\' && a[i - 2] == '\\') &&
+                i < len
+            );
             if (i < len) i++;
-            t = string;
-            if (*gl < t)
-                t = *gl;
-        }
-        else if (a[i] == '\'')
-        {
-            do
-            {
-                i++;
-            } while (!(a[i] == '\'' && a[i - 1] != '\\') && !(a[i - 1] == '\\' && a[i - 2] == '\\') && i < len);
-            if (i < len) i++;
-            t = chararcter;
+            t = string_or_chararcter;
             if (*gl < t)
                 t = *gl;
         }
@@ -222,29 +203,38 @@ void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset
             if (*gl < t)
                 t = *gl;
         }
-        else if (is_angle_brackets(a[i]) || a[i] == '&' || a[i] == '|')
-        {
-            if ((a[i + 1] == '=' && is_angle_brackets(a[i])) || a[i] == a[i + 1])
-                i += 2;
-            else
-                i++;
-            t = operator;
-            if (*gl < t)
-                t = *gl;
-        }
-        else if (a[i] == '+' || a[i] == '/' || a[i] == '*' || a[i] == '%' || a[i] == '-' || a[i] == '=' || a[i] == '!')
-        {
-            if (a[i + 1] == '=' || ((a[i] == '+' || a[i] == '-') && a[i] == a[i + 1]) || (a[i] == '-' && a[i + 1] == '>'))
-                i += 2;
-            else
-                i++;
-            t = operator;
-            if (*gl < t)
-                t = *gl;
-        }
-        else if (a[i] == '~' || a[i] == '^' || a[i] == '?' || a[i] == ':')
+        else if
+        (
+            a[i] == '&' || a[i] == '|' || a[i] == '<' || a[i] == '>' ||
+            a[i] == '+' || a[i] == '-' || a[i] == '*' || a[i] == '/' ||
+            a[i] == '%' || a[i] == '=' || a[i] == '~' || a[i] == '^' ||
+            a[i] == '?' || a[i] == ':' || a[i] == '!'
+        )
         {
             i++;
+            if
+            (
+                a[i] == a[i - 1] &&
+                (
+                    a[i] == '+' || a[i] == '-' ||
+                    a[i] == '<' || a[i] == '>' ||
+                    a[i] == '=' || a[i] == '&' ||
+                    a[i] == '|'
+                ) ||
+                a[i] == '=' &&
+                (
+                    a[i - 1] == '&' || a[i - 1] == '|' ||
+                    a[i - 1] == '+' || a[i - 1] == '-' ||
+                    a[i - 1] == '*' || a[i - 1] == '/' ||
+                    a[i - 1] == '%' || a[i - 1] == '=' ||
+                    a[i - 1] == '<' || a[i - 1] == '>' ||
+                    a[i - 1] == '!'
+                ) ||
+                a[i] == '>' && a[i - 1] == '-'
+            )
+                i++;
+            if (a[i] == '=' && (a[i - 1] == '<' && a[i - 1] == '>') && a[i - 1] == a[i - 2])
+                i++;
             t = operator;
             if (*gl < t)
                 t = *gl;
@@ -253,7 +243,7 @@ void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset
         else if (a[i] == '.' || a[i] == ',' || a[i] == ';')
         {
             i++;
-            t = delimeter;
+            t = other;
             if (*gl < t)
                 t = *gl;
         }
@@ -268,24 +258,19 @@ void output_c_line(WINDOW *win, wchar_t* a, size_t len, int start, size_t offset
             t = get_c_token_type(a, left, rigth);
         if (start)
         {
-            if (t == multiline_comment || t == oneline_comment)
-                waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(7));
-            else if (t == preproc_dir)
-                waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(2));
-            else if (t == number)
-                waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(5));
-            else if (t == string || t == chararcter)
-                waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(6));
-            else if (t == operator)
-                waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(4));
-            else if (t == type)
-		        waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(3));
-	        else if (t == keyword)
-		        waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(8));
-            else
-                waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(1));
-        }
-    }
+            switch (t)
+            {
+            case oneline_comment:       waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(7));  break;
+            case preproc_dir:           waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(2));  break;
+            case number:                waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(5));  break;
+            case string_or_chararcter:  waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(6));  break;
+            case operator:              waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(4));  break;
+            case type:                  waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(3));  break;
+            case keyword:               waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(8));  break;
+            default:                    waddstrfrag(win, a, left, rigth, &temp_offset, COLOR_PAIR(1));  break;
+            };
+        };
+    };
     if (*gl == preproc_dir || *gl == oneline_comment)
         *gl = undefined;
 }
