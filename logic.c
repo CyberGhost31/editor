@@ -72,7 +72,7 @@ void get_virt_x(editor_state *ed)
     for (int i = 0; i < ed->real_x - 1; i++)
         if (ed->current->str[i] == 9) tabs++;
     num_of_chars = ed->real_x - tabs + tabs * 4;
-    if ((int)num_of_chars - (int)ed->offset_x < 1)
+    if ((int)(num_of_chars - ed->offset_x) < 1)
     {
 
         ed->virt_x = num_of_chars % (COLS - 2);
@@ -81,7 +81,7 @@ void get_virt_x(editor_state *ed)
         ed->offset_x = num_of_chars - ed->virt_x;
         ed->rerender_flag = 1;
     }
-    else if ((int)num_of_chars - (int)ed->offset_x > COLS - 2)
+    else if ((int)(num_of_chars - ed->offset_x) > COLS - 2)
     {
         ed->virt_x = COLS - 2;
         ed->offset_x = num_of_chars - ed->virt_x;
