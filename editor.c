@@ -1,11 +1,10 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <ncurses.h>
 #include <string.h>
-#include "lines.h"
 #include "fio.h"
 #include "render.h"
-#include "logic.h"
+#include "process.h"
+#include "colors.h"
 
 void init_editor(editor_state *a, char *fname)
 {
@@ -51,7 +50,7 @@ void editor(char *fname)
     while (ed.exit_flag)
     {
         curs_set(0);
-        render_interface(ed, key);
+        render_interface(ed);
         refresh();
         if (ed.rerender_flag)
         {

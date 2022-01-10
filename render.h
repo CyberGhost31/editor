@@ -6,4 +6,4 @@ void waddstrfrag(WINDOW *win, wchar_t *a, size_t left, size_t rigth, size_t *off
 
 void render_text(WINDOW *win, editor_state ed);
 
-void render_interface(editor_state ed, int key);
+void render_interface(editor_state ed);

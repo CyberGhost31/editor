@@ -1,17 +1,6 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-
-struct ln_t
-{
-    wchar_t * str;
-    size_t size;
-    size_t length;
-    struct ln_t * next;
-    struct ln_t * prev;
-};
-
-typedef struct ln_t line;
+#include "lines.h"
 
 line *initln(wchar_t *string, size_t size, size_t length)
 {

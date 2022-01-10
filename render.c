@@ -1,7 +1,7 @@
 #include <ncurses.h>
 #include "editor.h"
 #include "lines.h"
-#include "highligth_c.h"
+#include "highlight_c.h"
 #include "fio.h"
 
 void waddstrfrag(WINDOW *win, wchar_t *a, size_t left, size_t rigth, size_t *offset, int attr)
@@ -78,14 +78,14 @@ void render_text(WINDOW *win, editor_state ed)
     
 }
 
-void render_interface(editor_state ed, int key)
+void render_interface(editor_state ed)
 {
     size_t y, x;
     init_pair(1, COLOR_WHITE, COLOR_BLACK);
     move(LINES - 1, 1);
     insertln();
     attron(A_REVERSE | COLOR_PAIR(1));
-    printw("[%s][%c] %d/%d %d", (ed.filename == NULL) ? "UNTITLED" : ed.filename, (ed.edit_flag == 1) ? '+' : ' ', ed.real_y, ed.real_x, key);
+    printw("[%s][%c] %d/%d", (ed.filename == NULL) ? "UNTITLED" : ed.filename, (ed.edit_flag == 1) ? '+' : ' ', ed.real_y, ed.real_x);
     getyx(stdscr, y, x);
     for (int i = x; i < COLS; i++)
         addch(' ');

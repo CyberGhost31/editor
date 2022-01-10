@@ -3,7 +3,7 @@
 
 struct ln_t
 {
-    wchar_t * str;
+    wchar_t *str;
     size_t size;
     size_t length;
     struct ln_t * next;

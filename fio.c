@@ -1,7 +1,5 @@
-#include <stddef.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include "logic.h"
+#include "process.h"
 #include "editor.h"
 #include <string.h>
 #include "lines.h"
@@ -124,6 +122,8 @@ void enter_name(editor_state *ed)
         strcpy(ed->filename, temp);
     }
     noecho();
+    if (get_file_type(ed->filename))
+        ed->rerender_flag = 1;
 }
 
 void save(editor_state *ed)
